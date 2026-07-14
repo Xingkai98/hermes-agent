@@ -1971,18 +1971,21 @@ class TelegramAdapter(BasePlatformAdapter):
 
     def _instrument_polling_request(self, request):
         """Wrap one dedicated PTB getUpdates request with progress tracking."""
-        do_request = request.do_request
+        # Capture the unbound method so we can call it with an explicit self
+        # argument. This avoids the __slots__ restriction on the PTB 22.6+
+        # HTTPXRequest class, which prevents instance-level attribute assignment.
+        _original_do_request = type(request).do_request
 
-        async def _do_request(*args, **kwargs):
+        async def _do_request(_self, *args, **kwargs):
             generation = _POLLING_GENERATION_CONTEXT.get()
-            result = await do_request(*args, **kwargs)
+            result = await _original_do_request(_self, *args, **kwargs)
             status_code, payload = result
             if generation is not None and 200 <= status_code < 300:
                 try:
                     # Use the request's own parser so health observation agrees
                     # exactly with PTB's authoritative response handling (e.g.
                     # UTF-8 replacement decoding and BOM rejection).
-                    envelope = request.parse_json_payload(payload)
+                    envelope = _self.parse_json_payload(payload)
                 except Exception:
                     # Instrumentation is observational: PTB still parses the
                     # untouched payload and owns the resulting exception.
@@ -1996,7 +1999,7 @@ class TelegramAdapter(BasePlatformAdapter):
                         self._record_polling_progress(generation)
             return result
 
-        request.do_request = _do_request
+        type(request).do_request = _do_request
         return request
 
     async def _start_polling_once(
