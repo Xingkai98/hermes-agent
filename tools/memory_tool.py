@@ -1137,7 +1137,7 @@ registry.register(
     toolset="memory",
     schema=MEMORY_SCHEMA,
     handler=lambda args, **kw: memory_tool(
-        action=args.get("action", ""),
+        action=args.get("action") or "",
         target=args.get("target", "memory"),
         content=args.get("content"),
         old_text=args.get("old_text"),
