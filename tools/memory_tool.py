@@ -1124,7 +1124,7 @@ MEMORY_SCHEMA = {
                 },
             },
         },
-        "required": ["target", "action"],
+        "required": ["target"],
     },
 }
 
