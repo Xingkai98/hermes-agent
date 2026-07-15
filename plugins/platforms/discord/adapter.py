@@ -3845,7 +3845,18 @@ class DiscordAdapter(BasePlatformAdapter):
                             "POST", "/channels/{channel_id}/typing",
                             channel_id=chat_id,
                         )
-                        await self._client.http.request(route)
+                        await asyncio.wait_for(
+                            self._client.http.request(route),
+                            timeout=10.0,
+                        )
+                    except asyncio.TimeoutError:
+                        # Abandon this tick; retry on the next cycle
+                        logger.debug(
+                            "Discord typing request timed out for %s; retrying next cycle",
+                            chat_id,
+                        )
+                        await asyncio.sleep(12)
+                        continue
                     except asyncio.CancelledError:
                         return
                     except Exception as e:
@@ -3878,8 +3889,8 @@ class DiscordAdapter(BasePlatformAdapter):
         if task:
             task.cancel()
             try:
-                await task
-            except (asyncio.CancelledError, Exception):
+                await asyncio.wait_for(task, timeout=5.0)
+            except (asyncio.CancelledError, asyncio.TimeoutError, Exception):
                 pass
 
     async def get_chat_info(self, chat_id: str) -> Dict[str, Any]:
