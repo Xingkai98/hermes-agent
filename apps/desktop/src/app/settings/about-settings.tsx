@@ -62,7 +62,7 @@ export function AboutSettings() {
     void refreshDesktopVersion()
   }, [])
 
-  const behind = status?.behind ?? 0
+  const behind = status?.behind
   const supported = status?.supported !== false
   const applying = apply.applying || apply.stage === 'restart'
 
@@ -84,8 +84,13 @@ export function AboutSettings() {
   } else if (applying) {
     statusLine = a.installing
     statusTone = 'available'
-  } else if (behind > 0) {
+  } else if (behind != null && behind > 0) {
     statusLine = a.updateReady(behind)
+    statusTone = 'available'
+  } else if (status?.updateAvailable || (behind != null && behind !== 0)) {
+    // Behind by an unknown amount (null from Electron or -1 from Python backend).
+    // The count is unknowable; show a generic "update available" with no number.
+    statusLine = a.updateAvailable
     statusTone = 'available'
   } else if (status) {
     statusLine = a.onLatest
@@ -142,7 +147,7 @@ export function AboutSettings() {
               {checking ? a.checking : a.checkNow}
             </Button>
 
-            {behind > 0 && supported && !applying && (
+            {(behind != null && behind !== 0) && supported && !applying && (
               <>
                 <Button onClick={() => startActiveUpdate()} size="sm">
                   {a.updateNow}

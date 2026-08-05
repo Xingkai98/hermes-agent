@@ -211,7 +211,7 @@ def _check_via_local_git(repo_dir: Path) -> Optional[int]:
         head_rev = _git_stdout(["rev-parse", "HEAD"], cwd=repo_dir)
         checked = _check_via_rev(head_rev) if head_rev else None
         if checked == UPDATE_AVAILABLE_NO_COUNT:
-            return 1
+            return UPDATE_AVAILABLE_NO_COUNT  # behind, but count is unknown (#79087)
         return checked
 
     # Installer checkouts are shallow (`git clone --depth 1`). On a shallow

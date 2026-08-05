@@ -204,7 +204,14 @@ export function maybeNotifyUpdateAvailable(status: DesktopUpdateStatus | null) {
     return
   }
 
-  if ((status.behind ?? 0) <= 0) {
+  // Be explicit about falsy vs 0: behind can be null (unknown count), 0
+  // (up-to-date), or positive (known count). Show a notification for any
+  // non-zero value including null/negative (unknown count behind).
+  const behind = status.behind
+  if (behind == null && !status.updateAvailable) {
+    return
+  }
+  if (behind === 0 && !status.updateAvailable) {
     return
   }
 
@@ -230,7 +237,9 @@ export function maybeNotifyUpdateAvailable(status: DesktopUpdateStatus | null) {
     icon: 'gift',
     id: UPDATE_TOAST_ID,
     kind: 'info',
-    message: translateNow('notifications.updateReadyMessage', behind),
+    message: behind != null && behind > 0
+      ? translateNow('notifications.updateReadyMessage', behind)
+      : translateNow('notifications.updateReadyMessageNoCount'),
     onDismiss: () => snoozeUpdateToast(),
     title: translateNow('notifications.updateReadyTitle')
   })
@@ -306,13 +315,17 @@ function isRemoteMode(): boolean {
 }
 
 function mapBackendCheck(res: BackendUpdateCheckResponse): DesktopUpdateStatus {
-  const behind = res.behind ?? 0
+  // UPDATE_AVAILABLE_NO_COUNT (-1) means we're behind but can't count commits.
+  // Normalise it to null so the UI can distinguish "unknown count" from a
+  // literal commit count (#79087).
+  const raw = res.behind ?? 0
+  const behind = raw > 0 ? raw : raw < 0 ? null : 0
 
   return {
     supported: res.can_apply,
     message: res.message ?? undefined,
     updateAvailable: res.update_available,
-    behind: behind > 0 ? behind : 0,
+    behind,
     currentVersion: res.current_version,
     targetSha: res.update_available ? `backend:${res.current_version}` : undefined,
     commits: res.commits,

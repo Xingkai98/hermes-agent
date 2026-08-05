@@ -21,7 +21,9 @@ function resolveBehindCount({ countStr, currentSha, targetSha, isShallow, hasMer
       return 0
     }
 
-    return 1 // behind by an unknown amount — show a generic "update available"
+    // Return null when behind by an unknown amount so the UI can distinguish
+    // "unknown count" from a literal "1 commit behind" (#79087).
+    return null
   }
 
   return Number.parseInt(countStr, 10) || 0
