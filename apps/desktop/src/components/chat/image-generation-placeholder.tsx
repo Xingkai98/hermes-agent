@@ -298,16 +298,28 @@ export const DiffusionCanvas: FC = () => {
     }
 
     sizeRef.current = fitCanvas(canvas, ctx)
+    let running = true
+
+    // Pause the per-frame animation when the document is hidden (tab backgrounded,
+    // window minimised) to avoid burning CPU/GPU on an invisible canvas (#79077).
+    const onVisibility = () => {
+      running = document.visibilityState !== 'hidden'
+    }
+
+    document.addEventListener('visibilitychange', onVisibility)
 
     let frame = requestAnimationFrame(function draw(now) {
-      const { width, height } = sizeRef.current
-      ctx.clearRect(0, 0, width, height)
-      drawAsciiDiffusion(ctx, themeRef.current, width, height, now / 1000)
+      if (running) {
+        const { width, height } = sizeRef.current
+        ctx.clearRect(0, 0, width, height)
+        drawAsciiDiffusion(ctx, themeRef.current, width, height, now / 1000)
+      }
       frame = requestAnimationFrame(draw)
     })
 
     return () => {
       cancelAnimationFrame(frame)
+      document.removeEventListener('visibilitychange', onVisibility)
     }
   }, [])
 
