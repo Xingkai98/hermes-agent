@@ -278,6 +278,9 @@ def run_oneshot(
     _write_usage_file(usage_file, result)
 
     if response:
+        # Replace lone surrogates (U+D800–U+DFFF) that cannot be encoded to
+        # stdout, preventing a UnicodeEncodeError crash (#80366).
+        response = response.encode("utf-8", errors="replace").decode("utf-8")
         real_stdout.write(response)
         if not response.endswith("\n"):
             real_stdout.write("\n")
