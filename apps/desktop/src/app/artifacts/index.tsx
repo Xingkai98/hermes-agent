@@ -50,7 +50,11 @@ import {
 } from './artifact-utils'
 
 function formatArtifactTime(timestamp: number): string {
-  return fmtDayTime.format(new Date(timestamp))
+  // Backend stores epoch-seconds; Date expects milliseconds.
+  // Fallback Date.now() values are already in ms (>1e12), so only
+  // multiply when the value looks like seconds.
+  const ms = timestamp < 1e12 ? timestamp * 1000 : timestamp
+  return fmtDayTime.format(new Date(ms))
 }
 
 function pageRangeLabel(total: number, page: number, pageSize: number, a: Translations['artifacts']): string {
