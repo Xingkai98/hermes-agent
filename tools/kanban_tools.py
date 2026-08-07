@@ -1265,7 +1265,7 @@ def _handle_create(args: dict, **kw) -> str:
         return tool_error(bool_error)
     idempotency_key = args.get("idempotency_key")
     max_runtime_seconds = args.get("max_runtime_seconds")
-    initial_status = args.get("initial_status") or "running"
+    initial_status = (args.get("initial_status") or "running").strip().lower()
     skills = args.get("skills")
     if isinstance(skills, str):
         # Accept a single skill name as a string for convenience.
