@@ -3106,6 +3106,14 @@ class MCPServerTask:
                             self.initialize_result = await asyncio.wait_for(
                                 session.initialize(), timeout=float(connect_timeout)
                             )
+                            # Persist the session ID from the initialize
+                            # response so subsequent requests include the
+                            # Mcp-Session-Id header, even when the SDK's
+                            # internal transport has a race between response
+                            # processing and the next outgoing request (#81793).
+                            _sid = _get_session_id()
+                            if _sid:
+                                http_client.headers["mcp-session-id"] = _sid
                             self.session = session
                             await self._discover_tools()
                             self._ready.set()
