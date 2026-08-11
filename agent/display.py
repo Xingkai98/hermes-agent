@@ -502,7 +502,7 @@ def build_tool_preview(tool_name: str, args: dict, max_len: int | None = None) -
         if data:
             parts.append(f'"{_oneline(str(data)[:20])}"')
         if timeout_val and action == "wait":
-            parts.append(f"{timeout_val}s")
+            parts.append(f"timeout={timeout_val}s")
         parts = [p for p in parts if p]
         return " ".join(parts) if parts else None
 
