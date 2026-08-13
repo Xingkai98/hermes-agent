@@ -88,6 +88,29 @@ def test_mirror_refresh_updates_changed_files_and_keeps_node_modules(
     assert (mirror / "node_modules" / "installed.txt").exists()
 
 
+def test_mirror_includes_runtime_imported_helpers(tmp_path, monkeypatch) -> None:
+    """#85046: the mirror must carry every module index.mjs imports.
+
+    ``index.mjs`` imports ``./send-format.mjs`` and ``./stream-staleness.mjs``
+    at startup. When the sidecar is mirrored to the writable HERMES_HOME
+    volume, omitting those files leaves a runnable-looking sidecar that then
+    dies at boot with ERR_MODULE_NOT_FOUND. The mirror set must stay in sync
+    with the runtime imports.
+    """
+    monkeypatch.delenv("PHOTON_SIDECAR_DIR", raising=False)
+    home = tmp_path / "home"
+    monkeypatch.setenv("HERMES_HOME", str(home))
+    source = tmp_path / "src"
+    _seed_source(source)
+    _freeze_writability(monkeypatch, writable=False)
+
+    mirror = sidecar_paths.resolve_sidecar_dir(source)
+
+    for name in ("send-format.mjs", "stream-staleness.mjs"):
+        assert (mirror / name).exists(), f"mirror missing {name}"
+        assert (mirror / name).read_text(encoding="utf-8") == f"// {name}\n"
+
+
 def test_dir_writable_probe(tmp_path) -> None:
     assert sidecar_paths.dir_writable(tmp_path) is True
     ro = tmp_path / "ro"
