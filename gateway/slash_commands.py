@@ -2816,8 +2816,8 @@ class GatewaySlashCommandsMixin:
         """Handle /heartbeat for gateway platforms (mirror of CLI handler).
 
         Sets/manages the session's one recurring re-entry prompt. The
-        gateway-wide poller injects due heartbeats through the adapter FIFO
-        as ordinary user turns, so alternation and caching are untouched.
+        gateway-wide poller delivers due heartbeats as internal wake turns,
+        so alternation and caching are untouched.
         """
         from hermes_cli.heartbeat import parse_interval, format_interval, MIN_INTERVAL_SECONDS
 

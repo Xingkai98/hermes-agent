@@ -20194,7 +20194,7 @@ class GatewayRunner(GatewayAuthorizationMixin, GatewayKanbanWatchersMixin, Gatew
         """Track a session with an active heartbeat and start the poller.
 
         The registry maps ``quick_key`` → ``(source, session_id)`` so the
-        poller can rebuild a MessageEvent and enqueue via the adapter FIFO.
+        poller can deliver a due prompt as an internal wake turn.
         In-memory by design: heartbeat STATE survives restarts in SessionDB,
         but firing resumes when the user touches /heartbeat again in the new
         gateway process (documented; durable schedules belong to cron).
@@ -20242,14 +20242,11 @@ class GatewayRunner(GatewayAuthorizationMixin, GatewayKanbanWatchersMixin, Gatew
                         adapter = self._adapter_for_source(source)
                         if adapter is None:
                             continue
-                        hb_event = MessageEvent(
-                            text=prompt,
-                            message_type=MessageType.TEXT,
-                            source=source,
-                            message_id=None,
-                            channel_prompt=None,
+                        from gateway.wake import deliver_wake
+
+                        await deliver_wake(
+                            adapter, text=prompt, session_id=session_id, source=source
                         )
-                        self._enqueue_fifo(quick_key, hb_event, adapter)
                     except Exception as exc:
                         logger.debug("heartbeat poll for %s failed: %s", quick_key, exc)
 
