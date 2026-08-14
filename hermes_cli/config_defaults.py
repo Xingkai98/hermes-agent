@@ -285,6 +285,12 @@ DEFAULT_CONFIG = {
         "image_input_mode": "auto",
         "disabled_toolsets": [],
 
+        # Global scalar reasoning-effort level applied when the active model
+        # has no matching entry in agent.reasoning_overrides. Empty string =
+        # provider default (no effort param sent). Runtime-consumed in
+        # hermes_constants; settable via ``hermes config set agent.reasoning_effort``.
+        "reasoning_effort": "",
+
         # Per-model reasoning effort overrides (spelling-tolerant).
         # Dict mapping model names (any reasonable spelling) to effort levels.
         # Takes precedence over agent.reasoning_effort when the current model

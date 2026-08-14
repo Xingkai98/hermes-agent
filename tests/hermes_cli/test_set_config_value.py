@@ -492,6 +492,8 @@ class TestValidateConfigKey:
         "model",
         "terminal.backend",
         "agent.max_turns",
+        "agent.reasoning_effort",
+        "agent.reasoning_overrides",
         "discord.gateway_restart_notification",
         "telegram.bot_token",
         "mcp_servers.foo.command",
