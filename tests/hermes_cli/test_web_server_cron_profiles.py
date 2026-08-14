@@ -323,6 +323,51 @@ async def test_dashboard_cron_rejects_missing_context_from(isolated_profiles):
     assert "missing-job-id" in update_exc.value.detail
 
 
+@pytest.mark.parametrize(
+    "input_attach, expected",
+    [
+        (True, True),
+        (False, False),
+        (None, None),
+    ],
+)
+def test_dashboard_create_forwards_attach_to_session(
+    isolated_profiles,
+    monkeypatch,
+    input_attach,
+    expected,
+):
+    """POST create must forward attach_to_session (true/false/omitted) to core.
+
+    Regression for #85819: the REST adapter dropped the field, so an explicit
+    per-job value never reached ``cron.jobs.create_job`` (which persists it).
+    """
+    from hermes_cli import web_server
+
+    captured = {}
+
+    def record_create(target_profile, func_name, *args, **kwargs):
+        captured["target_profile"] = target_profile
+        captured["func_name"] = func_name
+        captured["kwargs"] = kwargs
+        return {"id": "saved-job", "name": "attach-forward"}
+
+    monkeypatch.setattr(web_server, "_call_cron_for_profile", record_create)
+
+    web_server._create_cron_job_sync(
+        web_server.CronJobCreate(
+            prompt="attach_to_session forward canary",
+            schedule="every 1h",
+            name="attach-forward",
+            **({"attach_to_session": input_attach} if input_attach is not None else {}),
+        ),
+        profile="worker_alpha",
+    )
+
+    assert captured["func_name"] == "create_job"
+    assert captured["kwargs"]["attach_to_session"] == expected
+
+
 
 
 
